@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Sledge Family Travel Map</title>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css" />
+  <style>
+    html { display: flex; justify-content: center; align-items: center; }
+    body { background-color: #333; }
+    #map { height: 90vh; width: 95vw; margin: auto; border: 5px solid black; border-radius: 20px;}
+    h1 { color: rgb(0,150,255); text-decoration: underline wavy; text-underline-offset: 10px; text-align: center; text-shadow: 3px 3px 5px black; }
+    .leaflet-popup-content img { max-width: 100px; height: auto; display: inline-block; margin: 5px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+    .leaflet-popup-content { min-width: 300px; }
+    .fancybox__container {z-index: 9999 !important; }
+    @media (max-width: 600px) {
+      #map { height: 80vh; width: 90vw; border: 5px solid black;}
+      h1 { font-size: 1.5em; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Sledge Family Travel Map!</h1>
+  <div id="map"></div>
+  
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+  <script>
+    function adjustDPR(radius) {
+      return radius * window.devicePixelRatio;
+    }
+
+    // Create the map first
+    const map = L.map('map').setView([40.000, -100.000], 2);
+
+    // Now create the tile layers WITHOUT .addTo(map)
+    const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors',
+      minZoom: 2
+    });
+
+    const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+    });
+
+    // Add default tile layer to the map
+    osm.addTo(map);
+
+    // Home marker (added to PlacesLayer)
+    const homeMarker = L.marker([33.567569, -84.171372])
+      .bindPopup('<h3>My Home</h3><p>Our starting point for all adventures!</p><img src="https://picsum.photos/200/150?random=1" alt="Home image">');
+
+    // Define data structures for easier management and expansion
+    const roadTrips = [
+      ///////////////////////////////////  Niagara Trip \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+      {lat: 33.567569, lng: -84.171372, title: "Start/End of Niagara Trip", date: "2008", color: 'blue', isNiagara: true, images: []},
+      {lat: 37.536803, lng: -77.431984, title: "Richmond, Virginia", description: "First Stop of Niagara Trip", date: "2008", color: 'red', isNiagara: true},
+      {lat: 40.689208, lng: -74.04408, title: "New York City", date: "09-15-2008", images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463868/9.15.08_NYC_iu7oqx.jpg'], color: 'red', isNiagara: true},
+      {lat: 41.958444, lng: -70.662391, title: "Plymouth, Massachusetts", description: "Plymouth Rock and Mayflower Experience", date: "09-15-2008", images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463868/09.15.08_Plymouth_vkk5yf.jpg'], color: 'red', isNiagara: true},
+      {lat: 42.363855, lng: -71.053629, title: "Boston, Massachusetts", description: "The Paul Revere House", date: "09-16-2008", color: 'red', isNiagara: true},
+      {lat: 44.354134, lng: -68.138103, title: "Bar Harbor, Maine", description: "Egg Rock Lighthouse", date: "09-16-2008", images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463425/09.16.08_Maine_ldojfr.jpg'], color: 'red', isNiagara: true},
+      {lat: 43.081285, lng: -79.069933, title: 'Niagara Falls, Canada', description: 'Maid of The Mist and Cave of the Winds', date: '09-18-2008', images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463869/09.18.08_Niagara_Canada_sgwoxw.jpg'], color: 'red', isNiagara: true},
+      {lat: 33.567569, lng: -84.171372, title: "Start/End of Niagara Trip", date: "2008", color: 'blue', isNiagara: true, images: []},
+
+      //////////////////////////////////   Grand Canyon Trip    \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+      {lat: 33.567569, lng: -84.171372, title: "Start/End of Grand Canyon Trip", date: "2010", color: 'blue', isGrandCanyon: true, images: []},
+      {lat: 29.426057, lng: -98.487048, title: 'San Antonio, Texas', description: 'The Alamo and Riverwalk', date: '09-2010', images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463869/IMG_8087_lr1qpy.jpg'], color: 'orange', isGrandCanyon: true},
+      {lat: 32.176956, lng: -104.441188, title: 'Carlsbad, New Mexico', description: 'Carlsbad Caverns', date: '09-11-2010', images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463868/Carlsbad_NM_nr7ekn.jpg'], color: 'orange', isGrandCanyon: true},
+      {lat: 33.393881, lng: -104.524526, title: 'Roswell, New Mexico', description: 'Aliens!!', date: '09-12-2010', images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463871/New_Mexico_hi2pk5.jpg'], color: 'orange', isGrandCanyon: true},
+      {lat: 35.136616, lng: -109.84061, title: 'Painted Desert & Petrified Forest, Arizona', date: '09-2010', color: 'orange', isGrandCanyon: true},
+      {lat: 36.198952, lng: -112.05264, title: 'Grand Canyon, Arizona', description: 'North and South Rim', date: '09-2010', images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463869/Grand_Canyon_obz6ny.jpg'], color: 'orange', isGrandCanyon: true},
+      {lat: 36.992527, lng: -110.105752, title: 'Monument Valley, Utah', date: '09-2010', images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463871/Monument_Valley_UT_oqxafr.jpg'], color: 'orange', isGrandCanyon: true},
+      {lat: 37.184249, lng: -108.490127, title: 'Mesa Verde, Colorado', date: '09-2010', color: 'orange', isGrandCanyon: true},
+      {lat: 40.311865, lng: -105.700141, title: 'Rocky Mountains, Colorado', description: 'Rocky Mountain National Park', date: '09-2010', images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463873/IMG_8081_ft7jcl.jpg'], color: 'orange', isGrandCanyon: true},
+      {lat: 33.567569, lng: -84.171372, title: "Start/End of Grand Canyon Trip", date: "2010", color: 'blue', isGrandCanyon: true, images: []},
+
+      //////////////////////////////////  Yellowstone Trip  \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+      {lat: 33.567569, lng: -84.171372, title: "Start/End of Yellowstone Trip", date: "2011", color: 'blue', isYellowstone: true, images: []},
+      {lat: 36.161647, lng: -86.775851, title: 'Nashville, Tennessee', description: 'First Stop of Yellowstone Trip' ,date: '09-08-2011', images: [], color: 'yellow', isYellowstone: true},
+      {lat: 40.811438, lng: -96.708351, title: 'Lincoln, Nebraska', date: '09-10-2011', images: [], color: 'yellow', isYellowstone: true},
+      {lat: 43.556382, lng: -96.723096, title: 'Sioux Falls, South Dakota', date: '09-10-2011', images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463872/09.10.11_Sioux_Falls_SD_bmtqo0.jpg'], color: 'yellow', isYellowstone: true},
+      {lat: 43.714739, lng: -98.02559, title: 'Mitchell, South Dakota', description: 'Corn Palace', date: '09-10-2011', images: [], color: 'yellow', isYellowstone: true},
+      {lat: 43.692577, lng: -102.379531, title: 'Badlands, South Dakota', date: '09-11-2011', images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463873/Badlands_SD_stblit.jpg'], color: 'yellow', isYellowstone: true},
+      {lat: 43.879795, lng: -103.453638, title: 'Mt. Rushmore, South Dakota', date: '09-11-2011', images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463872/09.11.11_Mt_Rushmore_j876vc.jpg'], color: 'yellow', isYellowstone: true},
+      {lat: 44.6176, lng: -110.523753, title: 'Yellowstone', date: '09-12-2011', images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463875/Yellowstone_rvnyeg.jpg', 'https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463875/IMG_8086_ph5tde.jpg'], color: 'yellow', isYellowstone: true},
+      {lat: 43.798327, lng: -110.656875, title: 'Grand Tetons, Wyoming', date: '09-14-2011', images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463874/Rocky_Mountains_hlqxzn.jpg'], color: 'yellow', isYellowstone: true},
+      {lat: 40.717859, lng: -111.919077, title: 'Salt Lake City, Utah', description: 'Salt Flats', date: '09-15-2011', images: [], color: 'yellow', isYellowstone: true},
+      {lat: 35.466123, lng: -97.513949, title: 'Oklahoma City, Oklahoma', date: '09-17-2011', images: [], color: 'yellow', isYellowstone: true},
+      {lat: 33.567569, lng: -84.171372, title: "Start/End of Yellowstone Trip", date: "2011", color: 'blue', isYellowstone: true, images: []},
+
+      //////////////////////////////////// Glacier Trip  \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+      {lat: 33.567569, lng: -84.171372, title: "Start/End of Glacier Trip", date: "06-2013", color: 'blue', isGlacier: true, images: []},
+      {lat: 46.852699, lng: -101.426259, title: "New Salem, North Dakota", description: "Salem Sue Giant Cow", images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463880/Somewhere_in_ND_bdxdj3.jpg'], date: "06-2013", color: 'blue', isGlacier: true},
+      {lat: 48.61464, lng: -113.758599, title: "Glacier, Montana", images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463878/Glacier_Mt_iytjw7.jpg'], date: "06-2013", color: 'blue', isGlacier: true},
+      {lat: 47.620461, lng: -122.349302, title: "Seattle, Washington", description: "Space Needle and Puget Sound", images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463878/Seattle_WA_pk7fev.jpg'], date: "06-2013", color: 'blue', isGlacier: true},
+      {lat: 42.93869, lng: -122.106598, title: 'Crater Lake, Oregon', date: '06-2013', images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463876/Crater_Lake_wvfufz.jpg'], color: 'blue', isGlacier: true},
+      {lat: 41.791729, lng: -124.062076, title: "Redwood Forest, California", images: [], date: "06-2013", color: 'blue', isGlacier: true},
+      {lat: 41.591792, lng: -124.103442, title: "Pacific Ocean", description: "Picnic Lunch", images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463878/Pacific_Ocean_xtpf2l.jpg'], date: "06-2013", color: 'blue', isGlacier: true},      
+      {lat: 37.818175, lng: -122.478075, title: "San Francisco, California", description: "Golden Gate Bridge", images: [], date: "06-2013", color: 'blue', isGlacier: true},
+      {lat: 36.487005, lng: -118.595015, title: "Sequoia National Park, California", description: "General Sherman and Tunnel Log", images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463878/Redwood_CA_ntkyzc.jpg'], date: "06-2013", color: 'blue', isGlacier: true},
+      {lat: 36.16719, lng: -115.146674, title: "Las Vegas, Nevada", description: "Honeymoon Cruise", images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463876/Bellagio_LV_lryvgh.jpg'], date: "07-2013", color: 'blue', isGlacier: true},
+      {lat: 36.016058, lng: -114.737467, title: "Hoover Dam", description: "Honeymoon Cruise", images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463878/Hoover_Dam_p2asja.jpg'], date: "07-2013", color: 'blue', isGlacier: true},
+      {lat: 33.567569, lng: -84.171372, title: "Start/End of Glacier Trip", date: "07-2013", images: [], color: 'blue', isGlacier: true}
+    ];
+
+    // Create layer groups
+    var PlacesLayer = L.layerGroup();
+    var NiagaraLayer = L.layerGroup();
+    var GrandCanyonLayer = L.layerGroup();
+    var YellowstoneLayer = L.layerGroup();
+    var GlacierLayer = L.layerGroup();
+
+    let NiagaraPoints = [];
+    let GrandCanyonPoints = [];
+    let YellowstonePoints = [];
+    let GlacierPoints = [];
+
+    let galleryId = 0;
+
+    // Add home marker to PlacesLayer
+    homeMarker.addTo(PlacesLayer);
+
+    roadTrips.forEach(vac => {
+      galleryId++;
+      let galleryHtml = '<div class="gallery">';
+      const images = Array.isArray(vac.images) ? vac.images : (vac.images ? [vac.images] : []);
+      images.forEach(img => {
+        galleryHtml += `<a data-fancybox="gallery-${galleryId}" href="${img}"><img src="${img}" alt="${vac.title} image"></a>`;
+      });
+      galleryHtml += '</div>';
+
+      const marker = L.circleMarker([vac.lat, vac.lng], {
+        radius: adjustDPR(10),
+        color: vac.color,
+        fillColor: 'gray',
+        fillOpacity: 0.5
+      })
+        .bindTooltip(vac.title, { direction: 'top', offset: [0, -10] })
+        .bindPopup(`<h3>${vac.title} - ${vac.date}</h3><p>${vac.description || ''}</p>${galleryHtml}`);
+
+      // Add to Places layer and specific trip layer
+      marker.addTo(PlacesLayer);
+      if (vac.isNiagara) {
+        marker.addTo(NiagaraLayer);
+        NiagaraPoints.push([vac.lat, vac.lng]);
+      } else if (vac.isGrandCanyon) {
+        marker.addTo(GrandCanyonLayer);
+        GrandCanyonPoints.push([vac.lat, vac.lng]);
+      } else if (vac.isYellowstone) {
+        marker.addTo(YellowstoneLayer);
+        YellowstonePoints.push([vac.lat, vac.lng]);
+      } else if (vac.isGlacier) {
+        marker.addTo(GlacierLayer);
+        GlacierPoints.push([vac.lat, vac.lng]);
+      }
+    });
+
+    // Polylines with distinct dash patterns
+    if (NiagaraPoints.length > 1) {
+      L.polyline(NiagaraPoints, {color: 'red', weight: 2, opacity: 0.7, dashArray: '5, 5'}).addTo(NiagaraLayer).bindPopup('Niagara Route');
+    }
+    if (GrandCanyonPoints.length > 1) {
+      L.polyline(GrandCanyonPoints, {color: 'orange', weight: 2, opacity: 0.7, dashArray: '10, 10'}).addTo(GrandCanyonLayer).bindPopup('Grand Canyon Route');
+    }
+    if (YellowstonePoints.length > 1) {
+      L.polyline(YellowstonePoints, {color: 'yellow', weight: 2, opacity: 0.7, dashArray: '15, 5'}).addTo(YellowstoneLayer).bindPopup('Yellowstone Route');
+    }
+    if (GlacierPoints.length > 1) {
+      L.polyline(GlacierPoints, {color: 'blue', weight: 2, opacity: 0.7, dashArray: '5, 10'}).addTo(GlacierLayer).bindPopup('Glacier Route');
+    }
+
+    // Add layers to map
+    PlacesLayer.addTo(map);
+    NiagaraLayer.addTo(map);
+    GrandCanyonLayer.addTo(map);
+    YellowstoneLayer.addTo(map);
+    GlacierLayer.addTo(map);
+
+    // Overlay controls (fixed labels)
+    var overlayMaps = {
+      "Places": PlacesLayer,
+      "Niagara Trip": NiagaraLayer,
+      "Grand Canyon Trip": GrandCanyonLayer,
+      "Yellowstone Trip": YellowstoneLayer,
+      "Glacier Trip": GlacierLayer
+    };
+
+    // Base layers
+    const baseLayers = {
+      "OpenStreetMap": osm,
+      "Satellite": satellite
+    };
+
+    L.control.layers(baseLayers, overlayMaps).addTo(map);
+
+    // Fancybox initialization (once on load)
+    Fancybox.bind("[data-fancybox]", {
+      Thumbs: { autoStart: true },
+      Carousel: { infinite: true },
+      parentEl: document.body
+    });
+
+    // Improved map click popup
+    var popup = L.popup();
+    function onMapClick(e) {
+      const lat = e.latlng.lat.toFixed(4);
+      const lng = e.latlng.lng.toFixed(4);
+      popup
+        .setLatLng(e.latlng)
+        .setContent(`Clicked at Latitude: ${lat}, Longitude: ${lng}`)
+        .openOn(map);
+    }
+    map.on('click', onMapClick);
+
+    map.on('zoomend', function () {
+      console.log("Zoom level changed to:", map.getZoom());
+    });
+
+    // Improved Geocoder
+    L.Control.geocoder({
+      defaultMarkGeocode: false,
+      errorMessage: 'Search temporarily unavailable.'
+    })
+      .on('markgeocode', function (e) {
+        map.fitBounds(e.geocode.bbox);
+      })
+      .addTo(map);
+  </script>
+</body>
+</html>
