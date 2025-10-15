@@ -20,11 +20,17 @@
               0 0 30px orange;
 }
     h1 { color: rgb(0,150,255); text-align: center; text-shadow: 3px 3px 5px black; }
+    h3 { margin: 2px;}
+    h4 { margin: 2px;}
     .leaflet-popup-content img { max-width: 100px; height: auto; display: inline-block; margin: 5px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
-    .leaflet-popup-content { min-width: 300px; }
+    .leaflet-popup-content {text-align: center; color: white; }
+    .leaflet-popup-content-wrapper {background: #333;}
+    .leaflet-popup-tip {background: #333;}
+
     .fancybox__container {z-index: 9999 !important; }
 @media (max-width: 768px) {
   h1 {
+    display:none;
     font-size: 1.8rem;
     text-align: center;
     margin: 10px 0;
@@ -57,6 +63,7 @@
       return radius * window.devicePixelRatio;
     }
 
+
     // Create the map first
     const map = L.map('map').setView([40.000, -100.000], 2);
 
@@ -75,7 +82,7 @@
 
     // Home marker (added to PlacesLayer)
     const homeMarker = L.marker([33.567569, -84.171372])
-      .bindPopup('<h3>My Home</h3><p>Our starting point for all adventures!</p><img src="https://picsum.photos/200/150?random=1" alt="Home image">');
+      .bindPopup('<h3>Our Home</h3><p>Our starting point for all adventures!</p>');
 
     // Define data structures for easier management and expansion
     const roadTrips = [
@@ -125,8 +132,8 @@
       {lat: 41.591792, lng: -124.103442, title: "Pacific Ocean", description: "Picnic Lunch", images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463878/Pacific_Ocean_xtpf2l.jpg'], date: "06-2013", color: 'blue', isGlacier: true},      
       {lat: 37.818175, lng: -122.478075, title: "San Francisco, California", description: "Golden Gate Bridge", images: [], date: "06-2013", color: 'blue', isGlacier: true},
       {lat: 36.487005, lng: -118.595015, title: "Sequoia National Park, California", description: "General Sherman and Tunnel Log", images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463878/Redwood_CA_ntkyzc.jpg'], date: "06-2013", color: 'blue', isGlacier: true},
-      {lat: 36.16719, lng: -115.146674, title: "Las Vegas, Nevada", description: "Honeymoon Cruise", images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463876/Bellagio_LV_lryvgh.jpg'], date: "07-2013", color: 'blue', isGlacier: true},
-      {lat: 36.016058, lng: -114.737467, title: "Hoover Dam", description: "Honeymoon Cruise", images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463878/Hoover_Dam_p2asja.jpg'], date: "07-2013", color: 'blue', isGlacier: true},
+      {lat: 36.16719, lng: -115.146674, title: "Las Vegas, Nevada", description: "", images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463876/Bellagio_LV_lryvgh.jpg'], date: "07-2013", color: 'blue', isGlacier: true},
+      {lat: 36.016058, lng: -114.737467, title: "Hoover Dam", description: "", images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463878/Hoover_Dam_p2asja.jpg'], date: "07-2013", color: 'blue', isGlacier: true},
       {lat: 33.567569, lng: -84.171372, title: "Start/End of Glacier Trip", date: "07-2013", images: [], color: 'blue', isGlacier: true}
     ];
 
@@ -143,7 +150,7 @@
     let GlacierPoints = [];
 
     let galleryId = 0;
-
+    const markers = [];
     // Add home marker to PlacesLayer
     homeMarker.addTo(PlacesLayer);
 
@@ -156,17 +163,21 @@
       });
       galleryHtml += '</div>';
 
+
+
       const marker = L.circleMarker([vac.lat, vac.lng], {
-        radius: adjustDPR(10),
+        radius: getMarkerSize(map.getZoom()),
         color: vac.color,
         fillColor: 'gray',
         fillOpacity: 0.5
       })
         .bindTooltip(vac.title, { direction: 'top', offset: [0, -10] })
-        .bindPopup(`<h3>${vac.title} - ${vac.date}</h3><p>${vac.description || ''}</p>${galleryHtml}`);
+        .bindPopup(`<h3>${vac.title}</h3><h4>${vac.date}</h4><p>${vac.description || ''}</p>${galleryHtml}`);
+                      console.log("Radius: ", marker.getRadius());
 
       // Add to Places layer and specific trip layer
       marker.addTo(PlacesLayer);
+      markers.push(marker);
       if (vac.isNiagara) {
         marker.addTo(NiagaraLayer);
         NiagaraPoints.push([vac.lat, vac.lng]);
@@ -181,7 +192,13 @@
         GlacierPoints.push([vac.lat, vac.lng]);
       }
     });
-
+map.on('zoomend', () => {
+  const zoom = map.getZoom();
+  markers.forEach(m => {
+    const newRadius = getMarkerSize(zoom);
+    if (m.getRadius() !== newRadius) m.setRadius(newRadius);
+  });
+});
     // Polylines with distinct dash patterns
     if (NiagaraPoints.length > 1) {
       L.polyline(NiagaraPoints, {color: 'red', weight: 2, opacity: 0.7, dashArray: '5, 5'}).addTo(NiagaraLayer).bindPopup('Niagara Route');
@@ -195,7 +212,12 @@
     if (GlacierPoints.length > 1) {
       L.polyline(GlacierPoints, {color: 'blue', weight: 2, opacity: 0.7, dashArray: '5, 10'}).addTo(GlacierLayer).bindPopup('Glacier Route');
     }
-
+function getMarkerSize(zoom) {
+  // Base radius of 1px, scale with zoom, cap at 15px
+  size = Math.min(1 + zoom * 1.5, 15);
+  console.log("getmarkerSize called, zoom:",zoom, size);
+  return size;
+}
     // Add layers to map
     PlacesLayer.addTo(map);
     NiagaraLayer.addTo(map);
