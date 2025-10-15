@@ -3,26 +3,51 @@
 <head>
   <title>Sledge Family Travel Map</title>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css"/>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css" />
   <style>
     html { display: flex; justify-content: center; align-items: center; }
     body { background-color: #333; }
-    #map { height: 90vh; width: 95vw; margin: auto; border: 5px solid black; border-radius: 20px;}
-    h1 { color: rgb(0,150,255); text-decoration: underline wavy; text-underline-offset: 10px; text-align: center; text-shadow: 3px 3px 5px black; }
+    #map { height: 85vh; width: 95vw; margin: auto; border-radius: 20px;}
+    .map-border {
+  display: inline-block;
+  padding: 5px;
+  border-radius: 25px;
+  box-shadow: 0 0 10px orangered,
+              0 0 20px darkorange,
+              0 0 30px orange;
+}
+    h1 { color: rgb(0,150,255); text-align: center; text-shadow: 3px 3px 5px black; }
     .leaflet-popup-content img { max-width: 100px; height: auto; display: inline-block; margin: 5px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
     .leaflet-popup-content { min-width: 300px; }
     .fancybox__container {z-index: 9999 !important; }
-    @media (max-width: 600px) {
-      #map { height: 80vh; width: 90vw; border: 5px solid black;}
-      h1 { font-size: 1.5em; }
-    }
+@media (max-width: 768px) {
+  h1 {
+    font-size: 1.8rem;
+    text-align: center;
+    margin: 10px 0;
+  }
+
+  .map-border {
+    padding: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  #map {
+    height: 100dvh;
+    width: 100vw;
+    border-radius: 0;
+  }
+}
   </style>
 </head>
 <body>
   <h1>Sledge Family Travel Map!</h1>
-  <div id="map"></div>
+  <div class='map-border'><div id="map"></div></div>
   
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
