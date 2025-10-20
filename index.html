@@ -28,6 +28,7 @@
     .leaflet-popup-tip {background: #333;}
     .leaflet-tooltip { background: #333; color: white; border: 1px solid rgba(0,150,255,1);}
     .leaflet-tooltip-top:before {color: rgba(0,150,255,1); border-top-color: rgba(0,150,255,1)}
+    .leaflet-control-layers{background:#333}
 
     .fancybox__container {z-index: 9999 !important; }
       .gallery {
@@ -175,8 +176,20 @@
       {lat: 33.567569, lng: -84.171372, title: "Home", description: 'The Start of All Adventures', images: [], color: 'blue', isMichigan: true},
 
       /////////////////////////////////// One Stop Trips \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-      {lat: 35.7127, lng: -83.5147, title: 'Gatlinburg, Tennessee', description: 'Through the years', color: '#f002f8',images: []},
-      {lat: 29.1461, lng: -80.9567, title: 'Daytona, Florida', description: 'Mom\'s Surprise Birthday Trip', color: '#f002f8', date: '08-2025', images: []}
+      {lat: 35.7127, lng: -83.5147, title: 'Gatlinburg, Tennessee', description: 'Through the years', color: '#f002f8', isOneStopTrip: true, images: []},
+      {lat: 29.1461, lng: -80.9567, title: 'Daytona, Florida', description: 'Mom\'s Surprise Birthday Trip', color: '#f002f8', date: '08-2025', isOneStopTrip: true ,images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760980849/IMG_5829_yagtnq.jpg',
+      'https://res.cloudinary.com/db1jlxfsi/image/upload/v1760980847/IMG_2120_in8dbu.jpg',
+      'https://res.cloudinary.com/db1jlxfsi/image/upload/v1760980848/FullSizeRender_jrfbtq.jpg',
+      'https://res.cloudinary.com/db1jlxfsi/image/upload/v1760980847/IMG_2014_qxvptg.jpg',
+      'https://res.cloudinary.com/db1jlxfsi/image/upload/v1760980847/IMG_0789_dzbsho.jpg',
+      'https://res.cloudinary.com/db1jlxfsi/image/upload/v1760980847/IMG_2002_fbry4l.jpg',
+      'https://res.cloudinary.com/db1jlxfsi/image/upload/v1760980847/IMG_2117_yzppqq.jpg',
+      'https://res.cloudinary.com/db1jlxfsi/image/upload/v1760980844/IMG_6952_sbnoib.jpg',
+      'https://res.cloudinary.com/db1jlxfsi/image/upload/v1760980845/IMG_7062_gdu0ir.jpg',
+      'https://res.cloudinary.com/db1jlxfsi/image/upload/v1760980844/IMG_6971_o0p15u.jpg',
+      'https://res.cloudinary.com/db1jlxfsi/image/upload/v1760980844/IMG_6885_obkeud.jpg',
+      'https://res.cloudinary.com/db1jlxfsi/image/upload/v1760980844/IMG_6967_gy7wjo.jpg',
+      'https://res.cloudinary.com/db1jlxfsi/image/upload/v1760980844/IMG_6919_zntsyx.jpg']}
     ];
 
     // Create layer groups
@@ -186,6 +199,7 @@
     var YellowstoneLayer = L.layerGroup();
     var GlacierLayer = L.layerGroup();
     var MichiganLayer = L.layerGroup();
+    var OneStopTripsLayer = L.layerGroup();
 
     let NiagaraPoints = [];
     let GrandCanyonPoints = [];
@@ -255,6 +269,8 @@
       } else if (vac.isMichigan) {
         marker.addTo(MichiganLayer);
         MichiganPoints.push([vac.lat, vac.lng]);
+      } else if (vac.isOneStopTrip) {
+        marker.addTo(OneStopTripsLayer);
       }
     });
 map.on('zoomend', () => {
@@ -293,21 +309,23 @@ function getMarkerSize(zoom) {
     YellowstoneLayer.addTo(map);
     GlacierLayer.addTo(map);
     MichiganLayer.addTo(map);
+    OneStopTripsLayer.addTo(map);
 
     // Overlay controls (fixed labels)
-    var overlayMaps = {
-      "Places": PlacesLayer,
-      "Niagara Trip": NiagaraLayer,
-      "Grand Canyon Trip": GrandCanyonLayer,
-      "Yellowstone Trip": YellowstoneLayer,
-      "Glacier Trip": GlacierLayer,
-      "Michigan Trip": MichiganLayer
-    };
+var overlayMaps = {
+  "<span style='color: gray;'>Places</span>": PlacesLayer,
+  "<span style='color: red;'>Niagara Trip</span>": NiagaraLayer,
+  "<span style='color: orange;'>Grand Canyon Trip</span>": GrandCanyonLayer,
+  "<span style='color: yellow;'>Yellowstone Trip</span>": YellowstoneLayer,
+  "<span style='color: blue;'>Glacier Trip</span>": GlacierLayer,
+  "<span style='color: green;'>Michigan Trip</span>": MichiganLayer,
+  "<span style='color: #f002f8;'>One Stop Trips</span>": OneStopTripsLayer
+};
 
     // Base layers
     const baseLayers = {
-      "OpenStreetMap": osm,
-      "Satellite": satellite
+      "<span style='color: ivory;'>OpenStreetMap</span>": osm,
+      "<span style='color: ivory;'>Satellite</span>": satellite
     };
 
     L.control.layers(baseLayers, overlayMaps).addTo(map);
