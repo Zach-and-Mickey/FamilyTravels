@@ -8,18 +8,26 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css"/>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css" />
   <style>
-    html { display: flex; justify-content: center; align-items: center; }
-    body { background-color: #333; }
-    #map { height: 85vh; width: 95vw; margin: auto; border-radius: 20px;}
-    .map-border {
-  display: inline-block;
-  padding: 5px;
-  border-radius: 25px;
-  box-shadow: 0 0 10px orangered,
-              0 0 20px darkorange,
-              0 0 30px orange;
+html, body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* Prevents any scrollbars/gaps */
+  background-color: #212020; /* Or whatever you prefer */
 }
-    h1 { color: rgb(0,150,255); text-align: center; text-shadow: 3px 3px 5px black; }
+    #map { height: 100vh; width: 100vw; margin: none;}
+        .map-border {
+  display: inline-block;
+  position: relative;
+  background: transparent;
+}
+
+@keyframes rainbowGlow {
+  from { filter: hue-rotate(0deg); }
+  to   { filter: hue-rotate(360deg); }
+}
+    h1 { color: darkorange; text-align: center; text-shadow: 3px 3px 5px black; animation: rainbowGlow 40s linear infinite }
     h3 { margin: 2px; text-decoration: underline; color: rgba(0,150,255,1)}
     h4 { margin: 2px;}
     .leaflet-popup-content img { max-width: 100px; height: auto; display: inline-block; margin: 5px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
@@ -62,6 +70,48 @@
   justify-content: center;
   border-radius: 6px;
 }
+.top-overlay {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  z-index: 1000; /* Above map and controls */
+}
+.header-controls {
+  text-align: center;
+  margin: 10px 10px;
+  position: relative;
+  z-index: 1000; /* Ensures it's above map */
+}
+.upload-btn {
+  background: linear-gradient(45deg, orangered, darkorange, orange, #ff4500);
+  background-size: 400% 400%;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  border-radius: 50px;
+  cursor: pointer;
+  box-shadow: 
+    0 0 5px orangered,
+    0 0 10px darkorange,
+    0 0 15px orange,
+    0 0 20px #ff4500;
+  transition: all .3s ease;
+  animation: rainbowGlow 20s linear infinite;
+  margin-bottom: 10px;
+}
+
+.upload-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+}
+
+.upload-btn:active {
+  transform: translateY(1px);
+}
 @media (max-width: 768px) {
   h1 {
     display:none;
@@ -86,18 +136,37 @@
   </style>
 </head>
 <body>
-  <h1>Sledge Family Travel Map!</h1>
+<div class="top-overlay">
+  <button id="upload_button" class="upload-btn">
+    📸 Upload Photos
+  </button>
+</div>
   <div class='map-border'><div id="map"></div></div>
   
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+  <script src="https://widget.cloudinary.com/v2.0/global/all.js"></script>
   <script>
     function adjustDPR(radius) {
       return radius * window.devicePixelRatio;
     }
 
+let uploadedUrls = [];
 
+document.getElementById('upload_button').addEventListener('click', () => {
+  cloudinary.openUploadWidget({
+    cloudName: 'db1jlxfsi',
+    uploadPreset: 'Family-travels',
+    sources: ['local', 'camera', 'url'],  // Options
+    multiple: true
+  }, (error, result) => {
+    if (result && result.event === 'success') {
+      uploadedUrls.push(result.info.secure_url);
+      // Show preview or add to a list in form
+    }
+  });
+});
     // Create the map first
     const map = L.map('map').setView([39.000, -95.000], 5);
 
@@ -382,5 +451,6 @@ var overlayMaps = {
   </script>
 </body>
 </html>
+
 
 
