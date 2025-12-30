@@ -423,18 +423,6 @@ var overlayMaps = {
       parentEl: document.body
     });
 
-    // Improved map click popup
-    var popup = L.popup();
-    function onMapClick(e) {
-      const lat = e.latlng.lat.toFixed(4);
-      const lng = e.latlng.lng.toFixed(4);
-      popup
-        .setLatLng(e.latlng)
-        .setContent(`Clicked at Latitude: ${lat}, Longitude: ${lng}`)
-        .openOn(map);
-    }
-    map.on('click', onMapClick);
-
     map.on('zoomend', function () {
       console.log("Zoom level changed to:", map.getZoom());
     });
