@@ -1,455 +1,562 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Sound Test</title>
+  <title>Sledge Family Travel Map</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css" />
+  <style>
+html, body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* Prevents any scrollbars/gaps */
+  background-color: #212020; /* Or whatever you prefer */
+}
+    #map { height: 100vh; width: 100vw; margin: none;}
+        .map-border {
+  display: inline-block;
+  position: relative;
+  background: transparent;
+}
+
+@keyframes rainbowGlow {
+  from { filter: hue-rotate(0deg); }
+  to   { filter: hue-rotate(360deg); }
+}
+    h1 { color: darkorange; text-align: center; text-shadow: 3px 3px 5px black; animation: rainbowGlow 40s linear infinite }
+    h3 { margin: 2px; text-decoration: underline; color: rgba(0,150,255,1)}
+    h4 { margin: 2px;}
+    .leaflet-popup-content img { max-width: 100px; height: auto; display: inline-block; margin: 5px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+    .leaflet-popup-content {text-align: center; color: white; }
+    .leaflet-popup-content-wrapper {background: #333;}
+    .leaflet-popup-tip {background: #333;}
+    .leaflet-tooltip { background: #333; color: white; border: 1px solid rgba(0,150,255,1);}
+    .leaflet-tooltip-top:before {color: rgba(0,150,255,1); border-top-color: rgba(0,150,255,1)}
+    .leaflet-control-layers{background:#333}
+
+    .fancybox__container {z-index: 9999 !important; }
+      .gallery {
+  display: flex;
+  justify-content:center;
+  gap: 5px;
+}
+.gallery img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+.gallery a.preview {
+  display: block;
+  position: relative;
+}
+.preview {
+  position: relative;
+  justify-content: center;
+}
+.overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  color: white;
+  font-weight: bold;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+.top-overlay {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  z-index: 1000; /* Above map and controls */
+}
+.header-controls {
+  text-align: center;
+  margin: 10px 10px;
+  position: relative;
+  z-index: 1000; /* Ensures it's above map */
+}
+.upload-btn {
+  background: linear-gradient(45deg, orangered, darkorange, orange, #ff4500);
+  background-size: 400% 400%;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  border-radius: 50px;
+  cursor: pointer;
+  box-shadow: 
+    0 0 5px orangered,
+    0 0 10px darkorange,
+    0 0 15px orange,
+    0 0 20px #ff4500;
+  transition: all .3s ease;
+  animation: rainbowGlow 20s linear infinite;
+  margin-bottom: 10px;
+}
+
+.upload-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+}
+
+.upload-btn:active {
+  transform: translateY(1px);
+}
+@media (max-width: 768px) {
+  h1 {
+    display:none;
+    font-size: 1.8rem;
+    text-align: center;
+    margin: 10px 0;
+  }
+
+  .map-border {
+    padding: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  #map {
+    height: 100dvh;
+    width: 100vw;
+    border-radius: 0;
+  }
+}
+  </style>
 </head>
-<style>
-    
-    body{
-        display:flex;
-        flex-direction: column;
-        justify-content: center;
-        text-align:center;
-    }
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', system-ui, sans-serif;
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            position: relative;
-            background: #0a0a0a;
-            color: #e0e0e0;
-        }
-
-        /* Main Zen-like background */
-        .zen-bg {
-            position: absolute;
-            inset: 0;
-            background: 
-                radial-gradient(circle at 30% 20%, rgba(120, 80, 220, 0.705) 0%, transparent 50%),
-                radial-gradient(circle at 70% 70%, rgba(80, 199, 220, 0.868) 0%, transparent 60%),
-                linear-gradient(135deg, #3434b7c4 0%, #4b78ff96 50%, #25c2deaf 100%);
-            background-size: cover;
-            z-index: 1;
-        }
-
-        /* Subtle animated noise / grain overlay */
-        .zen-bg::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: 
-                radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px);
-            background-size: 60px 60px;
-            opacity: 0.6;
-            animation: subtleShift 25s linear infinite;
-            z-index: 2;
-            pointer-events: none;
-        }
-
-        @keyframes subtleShift {
-            0% { background-position: 0 0; }
-            100% { background-position: 100px 100px; }
-        }
-
-        /* Soft glow orb */
-        .zen-glow {
-            position: absolute;
-            width: 600px;
-            height: 600px;
-            background: radial-gradient(circle, rgba(96, 40, 237, 0.622) 10%, transparent 70%);
-            border-radius: 50%;
-            top: 20%;
-            left: 50%;
-            transform: translate(-50%, -30%);
-            filter: blur(80px);
-            z-index: 1;
-            animation: slowPulse 30s ease-in-out infinite alternate;
-        }
-
-        @keyframes slowPulse {
-            from { opacity: 0.7; transform: translate(-50%, -30%) scale(0.95); }
-            to { opacity: 0.95; transform: translate(-50%, -25%) scale(1.05); }
-        }
-        .app {
-            z-index:1000;
-        }
-    #keyboard {
-        display: flex;
-        flex-direction: row;
-        justify-content: center;
-        margin:0;
-        width: 100%;
-    }
-    .white-key {
-        width: 50px;
-        height: 200px;
-        border: 1px solid black;
-        margin: 0 2px;
-        cursor: pointer;
-        font-size: 16px;
-        display: flex;
-        align-items: flex-end;
-        justify-content: center;
-    }c
-    #control-knobs{
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        margin: 20px;
-    }
-    .active-key{
-        background-color: gray;
-    }
-    canvas{
-        background: rgba(0, 0, 0, 0.492);
-        border-radius: 25px;
-    }
-</style>
 <body>
-<div class="zen-bg"></div>
-        <div class="zen-glow"></div>
-            <div class = 'app'>
-<h1>Synthesizer</h1>
-<div id="keyboard">
-<button class="white-key" data-key="q" onclick="playC3()">C3</button>
-<button class="white-key" data-key="w" onclick="playD3()">D3</button>
-<button class="white-key" data-key="e" onclick="playE3()">E3</button>
-<button class="white-key" data-key="r" onclick="playF3()">F3</button>
-<button class="white-key" data-key="t" onclick="playG3()">G3</button>
-<button class="white-key" data-key="y" onclick="playA3()">A3</button>
-<button class="white-key" data-key="u" onclick="playB3()">B3</button>
-<button class="white-key" data-key="i" onclick="playC4()">C4</button>
-<button class="white-key" data-key="a" onclick="playD4()">D4</button>
-<button class="white-key" data-key="s" onclick="playE4()">E4</button>
-<button class="white-key" data-key="d" onclick="playF4()">F4</button>
-<button class="white-key" data-key="f" onclick="playG4()">G4</button>
-<button class="white-key" data-key="g" onclick="playA4()">A4</button>
-<button class="white-key" data-key="h" onclick="playB4()">B4</button>
-<button class="white-key" data-key="j" onclick="playC5()">C5</button>
+<div class="top-overlay">
+  <button id="upload_button" class="upload-btn">
+    📸 Upload Photos
+  </button>
 </div>
-<div id="control-knobs">
-    <div id="selection">
-    <label for="waveType">Waveform:</label>
-    <select name = "waveType" id="waveType" style="width: 50%">
-        <option value="sine">Sine</option>
-        <option value="square">Square</option>
-        <option value="triangle">Triangle</option>
-        <option value="sawtooth">Sawtooth</option>
-    </select>
-    </div>
-<label>
-    Gain:
-<input id='gain' type="range" min="0" max="2" step=".05">
-<span id='gainValue'>0</span>
-</label>
-<label>
-    Attack:
-<input id='attack' type="range" min="0" max=".2" step=".001">
-<span id='attackValue'>0</span>
-</label>
-<label>
-    Decay:
-<input id='decay' type="range" min="0" max="4" step=".005">
-<span id="decayValue">0</span>
-</label>
-<label>
-    Sustain:
-<input id='sustain' type="range" min="0" max="4" step=".005">
-<span id="sustainValue">0</span>
-</label>
-<label>
-    Release:
-<input id='release' type="range" min="0" max="4" step=".005">
-<span id="releaseValue">0</span>
-</label>
-</div>
-<div id="otherFeatures">
-<label>
-Filter
-<input id="cutoff" type="range" min="200" max="8000" value="2500">
-<span id="cutoffValue">0</span>
-</label>
-<label>
-Resonance
-<input id="resonance" type="range" min="0" max="10" value=".5" step=".1">
-<span id="resonanceValue">0</span>
-</label>
-</div>
-<canvas id="waveform" width="800" height="200"></canvas>
-</div>
-<script>
-const audio = new AudioContext();
-const notes = {
-    q: 261.63/2, // C3
-    w: 293.66/2, // D3
-    e: 329.63/2, // E3
-    r: 349.23/2, // F3
-    t: 392.00/2, // G3
-    y: 440.00/2, // A3
-    u: 493.88/2, // B3
-    i: 523.25/2,  // C4
-    a: 293.66, // D4
-    s: 329.63, // E4
-    d: 349.23, // F4
-    f: 392.00, // G4
-    g: 440.00, // A4
-    h: 493.88, // B4
-    j: 523.25  // C5
-};
-const activeNotes = {};
-const analyser = audio.createAnalyser();
+  <div class='map-border'><div id="map"></div></div>
+  
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+  <script src="https://widget.cloudinary.com/v2.0/global/all.js"></script>
+  <script>
+    function adjustDPR(radius) {
+      return radius * window.devicePixelRatio;
+    }
 
-analyser.fftSize = 1024;
+let uploadedUrls = [];
 
-function startNote(freq) {
-    const waveType = document.getElementById("waveType").value;
-    const attack = Number(document.getElementById("attack").value);
-    const decay = Number(document.getElementById("decay").value);
-    const sustain = Number(document.getElementById("sustain").value);
-    const release = Number(document.getElementById("release").value);
-    const masterGainValue = Number(document.getElementById("gain").value);
-    const cutoffFreq = Number(document.getElementById("cutoff").value);
-    const resonance = Number(document.getElementById("resonance").value);
+document.getElementById('upload_button').addEventListener('click', () => {
+  cloudinary.openUploadWidget({
+    cloudName: 'db1jlxfsi',
+    uploadPreset: 'Family-travels',
+    sources: ['local', 'camera', 'url'],  // Options
+    multiple: true
+  }, (error, result) => {
+    if (result && result.event === 'success') {
+      uploadedUrls.push(result.info.secure_url);
+      // Show preview or add to a list in form
+    }
+  });
+});
+    // Create the map first
+    const map = L.map('map').setView([39.000, -95.000], 5);
 
-
-    const osc1 = audio.createOscillator();
-    const osc2 = audio.createOscillator();
-    const gain1 = audio.createGain();
-    const gain2 = audio.createGain();
-    gain2.gain.value=1;
-    const filter = audio.createBiquadFilter();
-    filter.frequency.value = cutoffFreq;
-    filter.Q.value = resonance; 
-
-
-    const envelopeGain = audio.createGain();
-    envelopeGain.gain.value = masterGainValue;
-
-    const delay = audio.createDelay();
-    delay.delayTime.value = .3;
-gain1.gain.value = 1;
-gain2.gain.value= 0;
-    osc1.connect(gain1);
-    osc2.connect(gain2);
-    gain1.connect(envelopeGain);
-    gain2.connect(envelopeGain);
-    envelopeGain.connect(filter);
-    filter.connect(analyser);
-    analyser.connect(audio.destination);
-
-
-    osc1.frequency.value = freq;
-    osc2.frequency.value = freq;
-    osc1.type = waveType;
-    osc2.type = "sawtooth";
-//INITIAL
-   envelopeGain.gain.setValueAtTime(
-    0,
-    audio.currentTime
-);
-//ATTACK
-envelopeGain.gain.linearRampToValueAtTime(
-    1,
-    audio.currentTime + attack
-);
-//DECAY
-envelopeGain.gain.linearRampToValueAtTime(
-    0.3,
-    audio.currentTime + attack + decay
-);
-//SUSTAIN
-envelopeGain.gain.linearRampToValueAtTime(
-    0.3,
-    audio.currentTime + attack + decay + sustain
-);
-//RELEASE
-envelopeGain.gain.exponentialRampToValueAtTime(
-    .0001,
-    audio.currentTime + attack + decay + sustain + release
-);
-envelopeGain.gain.linearRampToValueAtTime(
-    0,
-    audio.currentTime + attack + decay + sustain + release + .001
-);
-    osc1.start();
-    osc2.start();
-return {
-    osc1,
-    osc2,
-    envelopeGain,
-    gain1,
-    gain2
-}
-}
-function stopNote(note){
-
-    const release =
-        Number(document.getElementById("release").value);
-
-    const now = audio.currentTime;
-
-    note.envelopeGain.gain.cancelScheduledValues(now);
-
-    note.envelopeGain.gain.setValueAtTime(
-        note.envelopeGain.gain.value,
-        now
-    );
-
-    note.envelopeGain.gain.exponentialRampToValueAtTime(
-        0.0001,
-        now + release
-    );
-
-    note.osc1.stop(now + release);
-    note.osc2.stop(now + release);
-
-}
-function playC3() {
-    startNote(261.63/2)
-}
-function playD3() {
-    startNote(293.66/2)
-}
-function playE3() {
-    startNote(329.63/2)
-}
-function playF3() {
-    startNote(349.23/2)
-}
-function playG3() {
-    startNote(392/2)
-}
-function playA3() {
-    startNote(220);
-}
-function playB3() {
-    startNote(493.88/2);
-}
-function playC4() {
-    startNote(261.63)
-}
-function playD4() {
-    startNote(293.66)
-}
-function playE4() {
-    startNote(329.63)
-}
-function playF4() {
-    startNote(349.23)
-}
-function playG4() {
-    startNote(392)
-}
-function playA4() {
-    startNote(440);
-}
-
-function playB4() {
-    startNote(493.88);
-}
-
-function playC5() {
-    startNote(523.25);
-}
-const sliders = document.querySelectorAll("input[type='range']");
-
-sliders.forEach(slider => {
-
-    const valueLabel = document.getElementById(slider.id + "Value");
-
-    valueLabel.textContent = slider.value;
-
-    slider.addEventListener("input", () => {
-        valueLabel.textContent = Number(slider.value).toFixed(3);
+    // Now create the tile layers WITHOUT .addTo(map)
+    const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors',
+      minZoom: 2
     });
 
+    const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+    });
+
+    // Add default tile layer to the map
+    osm.addTo(map);
+
+    // Define data structures for easier management and expansion
+    const roadTrips = [
+      ///////////////////////////////////  Niagara Trip \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+      {lat: 33.567569, lng: -84.171372,  title: "Home", description: 'The Start of All Adventures',  color: 'blue', isNiagara: true, images: []},
+      {lat: 37.536803, lng: -77.431984, title: "Richmond, Virginia", description: "First Stop of Niagara Trip", date: "2008", color: 'red', isNiagara: true},
+      {lat: 40.689208, lng: -74.04408, title: "New York City", date: "09-15-2008", images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463868/9.15.08_NYC_iu7oqx.jpg'], color: 'red', isNiagara: true},
+      {lat: 41.958444, lng: -70.662391, title: "Plymouth, Massachusetts", description: "Plymouth Rock and Mayflower Experience", date: "09-15-2008", images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463868/09.15.08_Plymouth_vkk5yf.jpg'], color: 'red', isNiagara: true},
+      {lat: 42.363855, lng: -71.053629, title: "Boston, Massachusetts", description: "The Paul Revere House", date: "09-16-2008", color: 'red', isNiagara: true},
+      {lat: 44.354134, lng: -68.138103, title: "Bar Harbor, Maine", description: "Egg Rock Lighthouse", date: "09-16-2008", images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463425/09.16.08_Maine_ldojfr.jpg'], color: 'red', isNiagara: true},
+      {lat: 43.081285, lng: -79.069933, title: 'Niagara Falls, Canada', description: 'Maid of The Mist and Cave of the Winds', date: '09-18-2008', images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463869/09.18.08_Niagara_Canada_sgwoxw.jpg'], color: 'red', isNiagara: true},
+      {lat: 33.567569, lng: -84.171372,  title: "Home", description: 'The Start of All Adventures',  color: 'blue', isNiagara: true, images: []},
+
+      //////////////////////////////////   Grand Canyon Trip    \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+      {lat: 33.567569, lng: -84.171372,  title: "Home", description: 'The Start of All Adventures',  color: 'blue', isGrandCanyon: true, images: []},
+      {lat: 29.426057, lng: -98.487048, title: 'San Antonio, Texas', description: 'The Alamo and Riverwalk', date: '09-2010', images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463869/IMG_8087_lr1qpy.jpg'], color: 'orange', isGrandCanyon: true},
+      {lat: 32.176956, lng: -104.441188, title: 'Carlsbad, New Mexico', description: 'Carlsbad Caverns', date: '09-11-2010', images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463868/Carlsbad_NM_nr7ekn.jpg'], color: 'orange', isGrandCanyon: true},
+      {lat: 33.393881, lng: -104.524526, title: 'Roswell, New Mexico', description: 'Aliens!!', date: '09-12-2010', images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463871/New_Mexico_hi2pk5.jpg'], color: 'orange', isGrandCanyon: true},
+      {lat: 35.136616, lng: -109.84061, title: 'Painted Desert & Petrified Forest, Arizona', date: '09-2010', color: 'orange', isGrandCanyon: true},
+      {lat: 36.198952, lng: -112.05264, title: 'Grand Canyon, Arizona', description: 'North and South Rim', date: '09-2010', images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463869/Grand_Canyon_obz6ny.jpg'], color: 'orange', isGrandCanyon: true},
+      {lat: 36.992527, lng: -110.105752, title: 'Monument Valley, Utah', date: '09-2010', images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463871/Monument_Valley_UT_oqxafr.jpg'], color: 'orange', isGrandCanyon: true},
+      {lat: 37.184249, lng: -108.490127, title: 'Mesa Verde, Colorado', date: '09-2010', color: 'orange', isGrandCanyon: true},
+      {lat: 40.311865, lng: -105.700141, title: 'Rocky Mountains, Colorado', description: 'Rocky Mountain National Park', date: '09-2010', images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463873/IMG_8081_ft7jcl.jpg'], color: 'orange', isGrandCanyon: true},
+      {lat: 33.567569, lng: -84.171372,  title: "Home", description: 'The Start of All Adventures',  color: 'blue', isGrandCanyon: true, images: []},
+
+      //////////////////////////////////  Yellowstone Trip  \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+      {lat: 33.567569, lng: -84.171372,  title: "Home", description: 'The Start of All Adventures',  color: 'blue', isYellowstone: true, images: []},
+      {lat: 36.161647, lng: -86.775851, title: 'Nashville, Tennessee', description: 'First Stop of Yellowstone Trip' ,date: '09-08-2011', images: [], color: 'yellow', isYellowstone: true},
+      {lat: 40.811438, lng: -96.708351, title: 'Lincoln, Nebraska', date: '09-10-2011', images: [], color: 'yellow', isYellowstone: true},
+      {lat: 43.556382, lng: -96.723096, title: 'Sioux Falls, South Dakota', date: '09-10-2011', images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463872/09.10.11_Sioux_Falls_SD_bmtqo0.jpg'], color: 'yellow', isYellowstone: true},
+      {lat: 43.714739, lng: -98.02559, title: 'Mitchell, South Dakota', description: 'Corn Palace', date: '09-10-2011', images: [], color: 'yellow', isYellowstone: true},
+      {lat: 43.692577, lng: -102.379531, title: 'Badlands, South Dakota', date: '09-11-2011', images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463873/Badlands_SD_stblit.jpg'], color: 'yellow', isYellowstone: true},
+      {lat: 43.879795, lng: -103.453638, title: 'Mt. Rushmore, South Dakota', date: '09-11-2011', images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463872/09.11.11_Mt_Rushmore_j876vc.jpg'], color: 'yellow', isYellowstone: true},
+      {lat: 44.6176, lng: -110.523753, title: 'Yellowstone', date: '09-12-2011', images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463875/Yellowstone_rvnyeg.jpg', 'https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463875/IMG_8086_ph5tde.jpg'], color: 'yellow', isYellowstone: true},
+      {lat: 43.798327, lng: -110.656875, title: 'Grand Tetons, Wyoming', date: '09-14-2011', images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463874/Rocky_Mountains_hlqxzn.jpg'], color: 'yellow', isYellowstone: true},
+      {lat: 40.717859, lng: -111.919077, title: 'Salt Lake City, Utah', description: 'Salt Flats', date: '09-15-2011', images: [], color: 'yellow', isYellowstone: true},
+      {lat: 35.466123, lng: -97.513949, title: 'Oklahoma City, Oklahoma', date: '09-17-2011', images: [], color: 'yellow', isYellowstone: true},
+      {lat: 33.567569, lng: -84.171372, title: "Home", description: 'The Start of All Adventures', color: 'blue', isYellowstone: true, images: []},
+
+      //////////////////////////////////// Glacier Trip  \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+      {lat: 33.567569, lng: -84.171372,  title: "Home", description: 'The Start of All Adventures', color: 'blue', isGlacier: true, images: []},
+      {lat: 46.852699, lng: -101.426259, title: "New Salem, North Dakota", description: "Salem Sue Giant Cow", images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463880/Somewhere_in_ND_bdxdj3.jpg'], date: "06-2013", color: 'blue', isGlacier: true},
+      {lat: 48.61464, lng: -113.758599, title: "Glacier, Montana", images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463878/Glacier_Mt_iytjw7.jpg'], date: "06-2013", color: 'blue', isGlacier: true},
+      {lat: 47.620461, lng: -122.349302, title: "Seattle, Washington", description: "Space Needle and Puget Sound", images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463878/Seattle_WA_pk7fev.jpg'], date: "06-2013", color: 'blue', isGlacier: true},
+      {lat: 42.93869, lng: -122.106598, title: 'Crater Lake, Oregon', date: '06-2013', images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463876/Crater_Lake_wvfufz.jpg'], color: 'blue', isGlacier: true},
+      {lat: 41.791729, lng: -124.062076, title: "Redwood Forest, California", images: [], date: "06-2013", color: 'blue', isGlacier: true},
+      {lat: 41.591792, lng: -124.103442, title: "Pacific Ocean", description: "Picnic Lunch", images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463878/Pacific_Ocean_xtpf2l.jpg'], date: "06-2013", color: 'blue', isGlacier: true},      
+      {lat: 37.818175, lng: -122.478075, title: "San Francisco, California", description: "Golden Gate Bridge", images: [], date: "06-2013", color: 'blue', isGlacier: true},
+      {lat: 36.487005, lng: -118.595015, title: "Sequoia National Park, California", description: "General Sherman and Tunnel Log", images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463878/Redwood_CA_ntkyzc.jpg'], date: "06-2013", color: 'blue', isGlacier: true},
+      {lat: 36.16719, lng: -115.146674, title: "Las Vegas, Nevada", description: "", images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463876/Bellagio_LV_lryvgh.jpg'], date: "07-2013", color: 'blue', isGlacier: true},
+      {lat: 36.016058, lng: -114.737467, title: "Hoover Dam", description: "", images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760463878/Hoover_Dam_p2asja.jpg'], date: "07-2013", color: 'blue', isGlacier: true},
+      {lat: 33.567569, lng: -84.171372, title: "Home", description: 'The Start of All Adventures', images: [], color: 'blue', isGlacier: true},
+      
+      //////////////////////////////////// Michigan Trip  \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+      {lat: 33.567569, lng: -84.171372, title: "Home", description: 'The Start of All Adventures', color: 'green', isMichigan: true, images: []},
+      {lat: 39.8305, lng: -77.2312, title: "Gettysburg, Pennsylvania", description: "First Stop of Michigan Trip", images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760554128/Gettysburg_PA_hr7up7.jpg', 'https://res.cloudinary.com/db1jlxfsi/image/upload/v1760554128/Gettysburg_Pa2_ja0qfl.jpg'], date: "2014", color: 'green', isMichigan: true},
+      {lat: 40.2875, lng: -76.6568, title: "Hershey, Pennsylvania", description: "Herhseypark and Factory Tour", images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760554127/Hershey_Park_PA_biwfnm.jpg'], date: "2014", color: 'green', isMichigan: true},
+      {lat: 45.8521, lng: -84.6173, title: "Mackinac Island, Michigan", description: "Fort Michilimackinac", images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760554128/Mackinac_Fort_mhtmtn.jpg','https://res.cloudinary.com/db1jlxfsi/image/upload/v1760554127/Mackinac_Island_Church_owou1h.jpg', 'https://res.cloudinary.com/db1jlxfsi/image/upload/v1760554127/Mackinac_Island_mk9chz.jpg'], date: "2014", color: 'green',  isMichigan: true},
+      {lat: 45.7838, lng: -84.7288, title: "Mackinaw City, Michigan", description: "Mackinaw Island Fudge Ice Cream!", images: [], date: "2014", color: 'green',  isMichigan: true},
+      {lat: 44.8893, lng: -86.0547, title: "Sleeping Bear Dunes, Michigan", description: "", images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760554127/Sand_Dunes_2_nhqvkp.jpg','https://res.cloudinary.com/db1jlxfsi/image/upload/v1760554127/Sand_Dunes_rkg5oy.jpg','https://res.cloudinary.com/db1jlxfsi/image/upload/v1760554126/Sand_Dunes_1_mxam0w.jpg'], date: "2014", color: 'green',  isMichigan: true},
+      {lat: 33.567569, lng: -84.171372, title: "Home", description: 'The Start of All Adventures', images: [], color: 'blue', isMichigan: true},
+
+
+
+            //////////////////////////////////// Alaska Trip  \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+      {lat: 49.288958, lng: -123.111479, title: "Vancouver, BC", description: "Cruise Terminal", 
+        images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1784652914/uqutgxailu3vdifi9xgg.jpg'],
+        date: "2026",
+        color: 'aqua',
+        isAlaska: true},
+      {lat: 57.0497, lng: -135.3322, title: "Sitka, Alaska", description: "Totem Poles and Mean Queen", 
+        images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1784652909/lre2vmtryml65eclgv3j.jpg',
+                 'https://res.cloudinary.com/db1jlxfsi/image/upload/v1784652914/ewchjl1b5yxeqrwitw7c.jpg',
+                 'https://res.cloudinary.com/db1jlxfsi/image/upload/v1784652916/pbb1yugzcoscyi4c2ski.jpg'],
+        date: "2026",
+        color: 'aqua',
+        isAlaska: true},
+      {lat: 57.502176, lng: -132.867279, title: "Endicott Arms, Alaska", description: "Dawe's Glacier", 
+        images: [],
+        date: "2026",
+        color: 'aqua',
+        isAlaska: true},
+      {lat: 58.2888899, lng: -134.397984, title: "Juneau, Alaska", description: "Whale Watching and Knife Shop", 
+        images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1784652849/auameap9jo01qg0sg7q4.jpg'],
+        date: "2026",
+        color: 'aqua',
+        isAlaska: true},
+      {lat: 58.133655, lng: -135.465921, title: "Icy Strait Point, Alaska", description: "Walk to Hoonah", 
+        images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1784652890/g4nxaunmkwfdozzz0ehm.jpg',
+                 'https://res.cloudinary.com/db1jlxfsi/image/upload/v1784652896/mi8vmlbgyvkpnxpmedqi.jpg',
+                 'https://res.cloudinary.com/db1jlxfsi/image/upload/v1784652888/hokegcjjxxl36wauafwl.jpg'],
+        date: "2026",
+        color: 'aqua',
+        isAlaska: true},
+
+      {lat: 55.34456,
+       lng: -131.65859,
+       title: "Ketchikan, Alaska",
+       description: "Walking and Lumberjack Show", 
+       images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1784652894/vw5iszvka39kgfm6kml8.jpg',
+                'https://res.cloudinary.com/db1jlxfsi/image/upload/v1784652889/lgh7otpdd3zrufko2977.jpg'],
+       date: "2026",
+       color: 'aqua',
+       isAlaska: true},
+
+      {lat: 49.288958,
+       lng: -123.111479,
+       title: "Vancouver, BC",
+       description: "Cruise Terminal", 
+       images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1784652914/uqutgxailu3vdifi9xgg.jpg'],
+       date: "2026",
+       color: 'aqua',
+       isAlaska: true},
+      /////////////////////////////////// One Stop Trips \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+      {lat: 35.7127, lng: -83.5147, title: 'Gatlinburg, Tennessee', description: 'Through the years', color: '#f002f8', isOneStopTrip: true, images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1765212785/Image-1_isop1w.jpg',
+        'https://res.cloudinary.com/db1jlxfsi/image/upload/v1765212783/Image-1_n9ymen.jpg',
+        'https://res.cloudinary.com/db1jlxfsi/image/upload/v1765212781/Image-1_o44mur.jpg',
+        'https://res.cloudinary.com/db1jlxfsi/image/upload/v1765212778/Image-1_ri9nkp.jpg',
+        'https://res.cloudinary.com/db1jlxfsi/image/upload/v1765212776/Image-1_jgkx8x.jpg',
+        'https://res.cloudinary.com/db1jlxfsi/image/upload/v1765212775/Image-1_ascexi.jpg',
+        'https://res.cloudinary.com/db1jlxfsi/image/upload/v1765212772/Image-2_s1z9oa.jpg',
+        'https://res.cloudinary.com/db1jlxfsi/image/upload/v1765212769/Image-1_y9wvsg.jpg',
+        'https://res.cloudinary.com/db1jlxfsi/image/upload/v1765212768/Image-1_mcimt4.jpg',
+        'https://res.cloudinary.com/db1jlxfsi/image/upload/v1765212760/Image-1_dgextx.jpg',
+        'https://res.cloudinary.com/db1jlxfsi/image/upload/v1765212765/Image-1_h6wbac.jpg',
+        'https://res.cloudinary.com/db1jlxfsi/image/upload/v1765212763/Image-1_sas4qp.jpg',
+        'https://res.cloudinary.com/db1jlxfsi/image/upload/v1765212763/Image-1_suibpn.jpg',
+        'https://res.cloudinary.com/db1jlxfsi/image/upload/v1765212761/Image-1_ist6as.jpg',
+        'https://res.cloudinary.com/db1jlxfsi/image/upload/v1765212759/Image-1_vjnng8.jpg',
+        'https://res.cloudinary.com/db1jlxfsi/image/upload/v1765212758/Image-1_yabl91.jpg',
+        'https://res.cloudinary.com/db1jlxfsi/image/upload/v1765212753/Image-1_zzsapb.jpg',
+        'https://res.cloudinary.com/db1jlxfsi/image/upload/v1765212750/Image-1_frx1k9.jpg']},
+      {lat: 29.1461, lng: -80.9567, title: 'Daytona, Florida', description: 'Mom\'s Surprise Birthday Trip', color: '#f002f8', date: '08-2025', isOneStopTrip: true ,images: ['https://res.cloudinary.com/db1jlxfsi/image/upload/v1760980849/IMG_5829_yagtnq.jpg',
+      'https://res.cloudinary.com/db1jlxfsi/image/upload/v1760980847/IMG_2120_in8dbu.jpg',
+      'https://res.cloudinary.com/db1jlxfsi/image/upload/v1760980848/FullSizeRender_jrfbtq.jpg',
+      'https://res.cloudinary.com/db1jlxfsi/image/upload/v1760980847/IMG_2014_qxvptg.jpg',
+      'https://res.cloudinary.com/db1jlxfsi/image/upload/v1760980847/IMG_0789_dzbsho.jpg',
+      'https://res.cloudinary.com/db1jlxfsi/image/upload/v1760980847/IMG_2002_fbry4l.jpg',
+      'https://res.cloudinary.com/db1jlxfsi/image/upload/v1760980847/IMG_2117_yzppqq.jpg',
+      'https://res.cloudinary.com/db1jlxfsi/image/upload/v1760980844/IMG_6952_sbnoib.jpg',
+      'https://res.cloudinary.com/db1jlxfsi/image/upload/v1760980845/IMG_7062_gdu0ir.jpg',
+      'https://res.cloudinary.com/db1jlxfsi/image/upload/v1760980844/IMG_6971_o0p15u.jpg',
+      'https://res.cloudinary.com/db1jlxfsi/image/upload/v1760980844/IMG_6885_obkeud.jpg',
+      'https://res.cloudinary.com/db1jlxfsi/image/upload/v1760980844/IMG_6967_gy7wjo.jpg',
+      'https://res.cloudinary.com/db1jlxfsi/image/upload/v1760980844/IMG_6919_zntsyx.jpg']}
+    ];
+
+    // Create layer groups
+    var PlacesLayer = L.layerGroup();
+    var NiagaraLayer = L.layerGroup();
+    var GrandCanyonLayer = L.layerGroup();
+    var YellowstoneLayer = L.layerGroup();
+    var GlacierLayer = L.layerGroup();
+    var MichiganLayer = L.layerGroup();
+    var AlaskaLayer = L.layerGroup();
+    var OneStopTripsLayer = L.layerGroup();
+
+    let NiagaraPoints = [];
+    let GrandCanyonPoints = [];
+    let YellowstonePoints = [];
+    let GlacierPoints = [];
+    let MichiganPoints = [];
+    let AlaskaPoints = [];
+
+    let galleryId = 0;
+    const markers = [];
+
+    roadTrips.forEach(vac => {
+  galleryId++;
+
+  const images = Array.isArray(vac.images) ? vac.images : (vac.images ? [vac.images] : []);
+  const previewImages = images.slice(0, 2);
+  const remaining = images.length - previewImages.length;
+
+  let galleryHtml = '<div class="gallery">';
+
+  // show only first 2 visible thumbnails
+  previewImages.forEach((img, i) => {
+    const overlay = (i === 1 && remaining > 0)
+      ? `<div class="overlay">+${remaining} more</div>`
+      : '';
+    galleryHtml += `
+      <a data-fancybox="gallery-${galleryId}" href="${img}" class="preview">
+        <img src="${img}" alt="${vac.title} image">${overlay}
+      </a>`;
+  });
+
+  // add the rest as hidden links for Fancybox
+  if (remaining > 0) {
+    images.slice(2).forEach(img => {
+      galleryHtml += `
+        <a data-fancybox="gallery-${galleryId}" href="${img}" style="display:none;"></a>`;
+    });
+  }
+
+  galleryHtml += '</div>';
+
+
+
+      const marker = L.circleMarker([vac.lat, vac.lng], {
+        radius: getMarkerSize(map.getZoom()),
+        color: vac.color,
+        fillColor: 'gray',
+        fillOpacity: 0.5,
+      })
+        .bindTooltip(vac.title, { direction: 'top', offset: [0, -10] })
+        .bindPopup(`<h3>${vac.title}</h3><h4>${vac.date || ''}</h4><p>${vac.description || ''}</p>${galleryHtml}`);
+
+      // Add to Places layer and specific trip layer
+      marker.addTo(PlacesLayer);
+      markers.push(marker);
+      if (vac.isNiagara) {
+        marker.addTo(NiagaraLayer);
+        NiagaraPoints.push([vac.lat, vac.lng]);
+      } else if (vac.isGrandCanyon) {
+        marker.addTo(GrandCanyonLayer);
+        GrandCanyonPoints.push([vac.lat, vac.lng]);
+      } else if (vac.isYellowstone) {
+        marker.addTo(YellowstoneLayer);
+        YellowstonePoints.push([vac.lat, vac.lng]);
+      } else if (vac.isGlacier) {
+        marker.addTo(GlacierLayer);
+        GlacierPoints.push([vac.lat, vac.lng]);
+      } else if (vac.isMichigan) {
+        marker.addTo(MichiganLayer);
+        MichiganPoints.push([vac.lat, vac.lng]);
+      } else if (vac.isAlaska) {
+        marker.addTo(AlaskaLayer);
+        AlaskaPoints.push([vac.lat, vac.lng]);
+      } else if (vac.isOneStopTrip) {
+        marker.addTo(OneStopTripsLayer);
+      }
+    });
+map.on('zoomend', () => {
+  const zoom = map.getZoom();
+  markers.forEach(m => {
+    const newRadius = getMarkerSize(zoom);
+    if (m.getRadius() !== newRadius) m.setRadius(newRadius);
+  });
 });
-document.addEventListener("keydown", (event) => {
-
-    if (event.repeat) return;
-
-    const freq = notes[event.key];
-
-    if (!freq) return;
-
-    activeNotes[event.key] = startNote(freq);
-
-    const keyButton = document.querySelector(
-        `[data-key="${event.key}"]`
-    );
-
-    if(keyButton){
-        keyButton.classList.add("active-key");
+    // Polylines with distinct dash patterns
+    if (NiagaraPoints.length > 1) {
+      L.polyline(NiagaraPoints, {color: 'red', weight: 5, opacity: 0.7, dashArray: '1, 10'}).addTo(NiagaraLayer).bindPopup('Niagara Route');
     }
-    console.log(event.key)
-});
-document.addEventListener("keyup", (event) => {
-
-    const note = activeNotes[event.key];
-
-    if (!note) return;
-
-    stopNote(note);
-
-    delete activeNotes[event.key];
-        
-    const keyButton = document.querySelector(
-        `[data-key="${event.key}"]`
-    );
-
-    if(keyButton){
-        keyButton.classList.remove("active-key");
+    if (GrandCanyonPoints.length > 1) {
+      L.polyline(GrandCanyonPoints, {color: 'orange', weight: 5, opacity: 0.7, dashArray: '1, 10'}).addTo(GrandCanyonLayer).bindPopup('Grand Canyon Route');
     }
-
-});
-
-///////////// Canvas element for drawing wave  ///////////////////
-const canvas = document.getElementById("waveform");
-const ctx = canvas.getContext("2d");
-
-const dataArray = new Uint8Array(analyser.fftSize);
-
-
-function drawWaveform(){
-
-    requestAnimationFrame(drawWaveform);
-
-    analyser.getByteTimeDomainData(dataArray);
-
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-
-    ctx.beginPath();
-
-    for(let i = 0; i < dataArray.length; i++){
-
-        const x = i / dataArray.length * canvas.width;
-
-        const y = dataArray[i] / 255 * canvas.height;
-
-        if(i === 0){
-            ctx.moveTo(x,y);
-        }
-        else{
-            ctx.lineTo(x,y);
-        }
+    if (YellowstonePoints.length > 1) {
+      L.polyline(YellowstonePoints, {color: 'yellow', weight: 5, opacity: 0.9, dashArray: '1, 12'}).addTo(YellowstoneLayer).bindPopup('Yellowstone Route');
     }
-    ctx.strokeStyle = "rgb(255,100,100)";
-    ctx.stroke();
-
+    if (GlacierPoints.length > 1) {
+      L.polyline(GlacierPoints, {color: 'blue', weight: 5, opacity: 0.7, dashArray: '1, 10'}).addTo(GlacierLayer).bindPopup('Glacier Route');
+    }
+    if (MichiganPoints.length > 1) {
+      L.polyline(MichiganPoints, {color: 'green', weight: 5, opacity: 0.7, dashArray: '1, 10'}).addTo(MichiganLayer).bindPopup('Michigan Route');
+    }
+    if (AlaskaPoints.length > 1) {
+      L.polyline(AlaskaPoints, {color: 'aqua', weight: 5, opacity: 0.9, dashArray: '1, 10'}).addTo(AlaskaLayer).bindPopup('Michigan Route');
+    }
+function getMarkerSize(zoom) {
+    return Math.min(1+zoom*3, 24);
 }
+    // Add layers to map
+    PlacesLayer.addTo(map);
+    NiagaraLayer.addTo(map);
+    GrandCanyonLayer.addTo(map);
+    YellowstoneLayer.addTo(map);
+    GlacierLayer.addTo(map);
+    MichiganLayer.addTo(map);
+    AlaskaLayer.addTo(map);
+    OneStopTripsLayer.addTo(map);
 
-drawWaveform();
-</script>
+    // Overlay controls (fixed labels)
+var overlayMaps = {
+  "<span style='color: gray;'>Places</span>": PlacesLayer,
+  "<span style='color: red;'>Niagara Trip</span>": NiagaraLayer,
+  "<span style='color: orange;'>Grand Canyon Trip</span>": GrandCanyonLayer,
+  "<span style='color: yellow;'>Yellowstone Trip</span>": YellowstoneLayer,
+  "<span style='color: blue;'>Glacier Trip</span>": GlacierLayer,
+  "<span style='color: green;'>Michigan Trip</span>": MichiganLayer,
+  "<span style='color: aqua;'>Alaska Trip</span>": AlaskaLayer,
+  "<span style='color: #f002f8;'>One Stop Trips</span>": OneStopTripsLayer
+};
+
+    // Base layers
+    const baseLayers = {
+      "<span style='color: ivory;'>OpenStreetMap</span>": osm,
+      "<span style='color: ivory;'>Satellite</span>": satellite
+    };
+
+    L.control.layers(baseLayers, overlayMaps).addTo(map);
+
+    // Fancybox initialization (once on load)
+    Fancybox.bind("[data-fancybox]", {
+      Thumbs: { autoStart: true },
+      Carousel: { infinite: true },
+      parentEl: document.body
+    });
+
+    map.on('zoomend', function () {
+      getMarkerSize()
+      console.log("Zoom level changed to:", map.getZoom());
+    });
+
+    // Improved Geocoder
+const geocoderControl = L.Control.geocoder({
+    defaultMarkGeocode: false
+}).on('markgeocode', function(e) {
+    const result= e.geocode;
+    console.log(result);
+    const latlng = result.center;
+    const shortName = result.properties.name || result.properties.display_name;
+
+    map.setView(latlng, 17);
+
+    L.marker(latlng)
+        .addTo(map)
+        .bindPopup(shortName)
+        .openPopup();
+
+}).addTo(map);
+
+
+// Get the existing search input
+const searchInput = document.querySelector('.leaflet-control-geocoder-form input');
+
+let searchTimeout;
+
+searchInput.addEventListener('input', function() {
+
+    clearTimeout(searchTimeout);
+
+    searchTimeout = setTimeout(async () => {
+
+        const query = searchInput.value;
+const bounds = map.getBounds();
+
+const north = bounds.getNorth();
+const south = bounds.getSouth();
+const east = bounds.getEast();
+const west = bounds.getWest();
+        if (query.length < 3) return;
+
+        const response = await fetch(
+            `https://nominatim.openstreetmap.org/search?` +
+`format=json` +
+`&q=${encodeURIComponent(query)}` +
+`&viewbox=${west},${north},${east},${south}` +
+`&bounded=1` +
+`&limit=5`
+        );
+
+        const results = await response.json();
+
+        console.log(results);
+
+    }, 10000);
+
+});
+
+      /////////////////////////// ADD PENDING OVER HAWAII ////////////////////////////////////
+L.marker([20.8, -156.3], {
+    interactive: false,
+    opacity: 0
+})
+.bindTooltip("🏝️ PENDING", {
+    permanent: true,
+    direction: "center",
+    className: "pending-label"
+})
+.addTo(map);
+let timeout;
+  </script>
 </body>
 </html>
+
+
+
