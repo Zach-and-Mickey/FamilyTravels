@@ -439,7 +439,7 @@ map.on('zoomend', () => {
       L.polyline(MichiganPoints, {color: 'green', weight: 5, opacity: 0.7, dashArray: '1, 10'}).addTo(MichiganLayer).bindPopup('Michigan Route');
     }
     if (AlaskaPoints.length > 1) {
-      L.polyline(AlaskaPoints, {color: 'aqua', weight: 5, opacity: 0.9, dashArray: '1, 10'}).addTo(AlaskaLayer).bindPopup('Michigan Route');
+      L.polyline(AlaskaPoints, {color: 'aqua', weight: 5, opacity: 0.9, dashArray: '1, 10'}).addTo(AlaskaLayer).bindPopup('Alaska Route');
     }
 function getMarkerSize(zoom) {
     return Math.min(1+zoom*3, 24);
